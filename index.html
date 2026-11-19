@@ -233,15 +233,15 @@ footer{margin-top:64px}
         <div class="meta" id="evMeta"></div>
         <p class="lead" id="evDesc"></p>
         <div class="facts" id="evFacts"></div>
-        <div class="eyebrow">On the table</div>
-        <ul class="menu" id="evMenu"></ul>
+        <div id="evMenuWrap"><div class="eyebrow">On the table</div>
+        <ul class="menu" id="evMenu"></ul></div>
       </div>
       <aside class="box" aria-labelledby="tixH">
         <h2 id="tixH">Choose your seat</h2>
-        <div class="hint">Every table is five guys and five girls. You're only charged if you're approved.</div>
+        <div class="hint">Every table is five guys and five girls. You only pay if you're approved.</div>
         <div id="tickets"></div>
         <button class="btn" id="toApply" type="button" disabled>Select a seat to apply</button>
-        <p class="fine">Payment method coming soon (Bit or card). Approved guests get 24 hours to confirm.</p>
+        <p class="fine">If you're approved, we'll WhatsApp you the Bit details to pay and lock in your seat.</p>
       </aside>
     </div>
   </section>
@@ -313,7 +313,8 @@ footer{margin-top:64px}
           <div class="f-item" data-f="ok"><label class="check"><input id="ok" type="checkbox"><span>I understand seats are curated, I may not be approved, and my details are used only to review this application.</span></label><span class="err">Please confirm to continue.</span></div>
         </fieldset>
 
-        <button class="btn" type="submit">Send my application</button>
+        <p class="err" id="submitErr" role="alert" hidden style="display:block"></p>
+        <button class="btn" type="submit" id="submitBtn">Send my application</button>
         <p class="fine" style="text-align:center">You won't pay anything now.</p>
       </form>
     </div>
@@ -329,8 +330,8 @@ footer{margin-top:64px}
       <div class="track"><ol>
         <li class="d"><span class="dot">✓</span><div><b>Application sent</b><small>We have your details and selfie.</small></div></li>
         <li class="now"><span class="dot"></span><div><b>Hosts review the table</b><small>Usually within 48 hours. We balance ages, vibes and backgrounds.</small></div></li>
-        <li><span class="dot"></span><div><b>Approved or not this time</b><small>We'll message you by email and WhatsApp either way.</small></div></li>
-        <li><span class="dot"></span><div><b>Confirm your seat</b><small>Pay to lock it in and get the exact address.</small></div></li>
+        <li><span class="dot"></span><div><b>Approved, waitlist or not this time</b><small>We'll message you on WhatsApp either way.</small></div></li>
+        <li><span class="dot"></span><div><b>Pay by Bit</b><small>Pay to lock in your seat, then we send the exact address.</small></div></li>
       </ol></div>
       <button class="btn ghost" type="button" data-go="home" style="max-width:280px;margin-inline:auto">Browse other dinners</button>
     </div>
@@ -338,118 +339,12 @@ footer{margin-top:64px}
 
   <footer>
     <div class="foot-media bleed"><img src="media/table.jpg" alt=""><p>Shabbat shalom, Tel Aviv.</p></div>
-    <div class="foot-line wrap"><span>Shabbat Ten · Tel Aviv–Yafo</span><span>Prototype: approvals and payments are placeholders.</span></div>
+    <div class="foot-line wrap"><span>Shabbat Ten · Tel Aviv–Yafo</span><span>Seats are curated · payment by Bit after approval</span></div>
   </footer>
 </main>
 
-<script>
-const PRICE=220;
-const DINNERS=[
-  {id:"n27",title:"Rooftop Kiddush",hood:"Neve Tzedek",date:"Fri, Nov 27",dd:"27.11",candles:"16:20",doors:"19:30",ages:"26–34",takenM:3,takenF:4,img:"media/challah1.jpg",
-   desc:"We start on a rooftop above the old stone lanes with kiddush as the last light goes, then sit down to a long table under string lights. Your hosts keep the conversation moving with a few easy questions, and the seating changes once after mains so you meet more of the table.",
-   venue:"Private rooftop, Neve Tzedek",dress:"Shabbat chic, white welcome",
-   menu:["Homemade challah, tahini, matbucha","Charred eggplant, labneh, pomegranate","Slow-cooked chicken with apricots","Malabi with rose and pistachio","Israeli wine and arak"]},
-  {id:"d25",title:"Jaffa Long Table",hood:"Old Jaffa",date:"Fri, Dec 25",dd:"25.12",candles:"16:24",doors:"19:00",ages:"28–38",takenM:1,takenF:2,img:"media/table.jpg",
-   desc:"A stone-walled courtyard a few steps from the port. Fish from the market that morning, a cook who tells the story behind every plate, and ten people who came alone and leave as a crew.",
-   venue:"Courtyard house, Old Jaffa",dress:"Relaxed, sea breeze layers",
-   menu:["Challah and three spreads","Market crudo with lemon and chili","Whole roasted fish, herbs, potatoes","Knafeh to share","Galilee whites and a rosé"]},
-  {id:"j29",title:"Florentin Garden",hood:"Florentin",date:"Fri, Jan 29",dd:"29.01",candles:"16:50",doors:"19:30",ages:"24–32",takenM:5,takenF:2,img:"media/challah2.jpg",
-   desc:"A hidden garden behind a graffiti door. Candles on the table, a playlist that goes from Arik Einstein to house, and a long, late dinner that tends to end on someone's balcony.",
-   venue:"Garden apartment, Florentin",dress:"Whatever you'd wear to a friend's",
-   menu:["Challah, schug, tomato-garlic","Roasted cauliflower, tahini, sumac","Lamb kebab or mushroom shawarma","Chocolate babka","Natural wines"]},
-  {id:"f26",title:"Sea-View Friday",hood:"Gordon Beach",date:"Fri, Feb 26",dd:"26.02",candles:"17:15",doors:"18:45",ages:"27–36",takenM:0,takenF:0,img:"media/t.jpg",
-   desc:"A penthouse table facing the Mediterranean. We light candles together at sunset, then dinner, then a walk on the promenade for whoever wants it.",
-   venue:"Penthouse, Gordon Beach",dress:"Smart casual",
-   menu:["Challah with olive oil and za'atar","Fattoush with sumac onions","Sea bass, beurre blanc, greens","Pavlova with passion fruit","Champagne toast at candle lighting"]},
-];
-
-function split(d){
-  const lm=5-d.takenM, lf=5-d.takenF;
-  return `<div class="split"><div class="m"><b>GUYS</b><span>${lm} <small>of 5 left</small></span></div><div class="f"><b>GIRLS</b><span>${lf} <small>of 5 left</small></span></div></div>`;
-}
-const list=document.getElementById("list");
-list.innerHTML=DINNERS.map(d=>{const full=d.takenM+d.takenF>=10;return `<button class="card${full?" full":""}" type="button" data-id="${d.id}">
-  <img src="${d.img}" alt="" loading="lazy">
-  <div class="body">
-    <div class="top"><div><div class="eyebrow">${d.hood}</div><h3>${d.title}</h3></div><div class="date">${d.dd}<small>candles ${d.candles}</small></div></div>
-    <div class="meta">Doors ${d.doors} · Ages ${d.ages} · ₪${PRICE} a seat</div>
-    ${split(d)}
-    <span class="cta">${full?"Join the waitlist":"Request a seat"}</span>
-  </div></button>`}).join("");
-list.addEventListener("click",e=>{const c=e.target.closest(".card");if(c)openEvent(c.dataset.id)});
-
-let cur=null, seat=null;
-function show(v){["home","event","apply","done"].forEach(k=>document.getElementById("v-"+k).hidden=k!==v);window.scrollTo(0,0);
-  const vid=document.getElementById("heroVid");try{v==="home"?vid.play():vid.pause()}catch(e){}}
-document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.go)));
-document.getElementById("logo").onclick=()=>show("home");
-document.getElementById("hdrApply").onclick=()=>{show("home");document.getElementById("list").scrollIntoView({behavior:"smooth"})};
-document.getElementById("backToEvent").onclick=()=>show("event");
-
-function openEvent(id){
-  cur=DINNERS.find(d=>d.id===id);seat=null;
-  const im=document.getElementById("evImg");im.src=cur.img;im.alt=cur.title+" Shabbat table";
-  document.getElementById("evTitle").innerHTML=`${cur.title} <em style="color:var(--coral)">${cur.dd}</em>`;
-  document.getElementById("evMeta").textContent=`${cur.date} · ${cur.hood}, Tel Aviv–Yafo · Candle lighting ${cur.candles}`;
-  document.getElementById("evDesc").textContent=cur.desc;
-  document.getElementById("evFacts").innerHTML=`
-   <div><span>Doors</span>${cur.doors}</div><div><span>Ages</span>${cur.ages}</div>
-   <div><span>Where</span>${cur.venue}</div><div><span>Dress</span>${cur.dress}</div>
-   <div><span>Table</span>10 guests · 5 + 5</div><div><span>Address</span>Sent after approval</div>`;
-  document.getElementById("evMenu").innerHTML=cur.menu.map(m=>`<li>${m}</li>`).join("");
-  renderTickets();show("event");
-}
-function renderTickets(){
-  const lm=5-cur.takenM, lf=5-cur.takenF;
-  const t=(g,label,left)=>`<button class="ticket ${g==="f"?"f":""}" type="button" data-g="${g}" aria-pressed="${seat===g}" ${left?"":"disabled"}>
-    <span class="ic">${g==="m"?"M":"F"}</span><span class="t"><b>${label}</b><small>${left?`${left} of 5 left · dinner, wine, the works`:"Full. Waitlist opens soon"}</small></span><span class="p">₪${PRICE}</span></button>`;
-  document.getElementById("tickets").innerHTML=t("m","Guy's seat",lm)+t("f","Girl's seat",lf);
-  const b=document.getElementById("toApply");b.disabled=!seat;b.textContent=seat?"Continue to application →":"Select a seat to apply";
-}
-document.getElementById("tickets").addEventListener("click",e=>{const b=e.target.closest(".ticket");if(!b||b.disabled)return;seat=b.dataset.g;renderTickets()});
-document.getElementById("toApply").onclick=()=>openApply();
-
-function openApply(keepScroll){
-  document.getElementById("sum").innerHTML=`<img src="${cur.img}" alt=""><div><div class="eyebrow">${cur.date} · ${cur.hood}</div><b>${cur.title}</b><div class="hint">${seat==="m"?"Guy's":"Girl's"} seat · ₪${PRICE}, charged only if approved</div></div>`;
-  const lm=5-cur.takenM, lf=5-cur.takenF;
-  document.querySelectorAll('input[name=gender]').forEach(r=>{r.checked=r.value===seat;r.disabled=(r.value==="m"?!lm:!lf)});
-  if(!keepScroll)show("apply");
-}
-document.getElementById("genderSeg").addEventListener("change",e=>{seat=e.target.value;openApply(true)});
-
-let selfie=null;
-["cam","up"].forEach(id=>document.getElementById(id).addEventListener("change",e=>{
-  const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{selfie=r.result;document.getElementById("ph").innerHTML=`<img src="${selfie}" alt="Your selfie preview">`;mark("selfie",true)};r.readAsDataURL(f)}));
-
-function ageOf(v){if(!v)return null;const b=new Date(v),n=new Date();let a=n.getFullYear()-b.getFullYear();const m=n.getMonth()-b.getMonth();if(m<0||(m===0&&n.getDate()<b.getDate()))a--;return a}
-document.getElementById("dob").addEventListener("input",e=>{const a=ageOf(e.target.value);document.getElementById("age").textContent=a!=null&&a>0?`· ${a}`:""});
-
-function mark(f,ok){document.querySelector(`[data-f="${f}"]`).classList.toggle("invalid",!ok);return ok}
-document.getElementById("form").addEventListener("submit",e=>{
-  e.preventDefault();
-  const v=id=>document.getElementById(id).value.trim();
-  const a=ageOf(v("dob"));
-  document.getElementById("dobErr").textContent=a!=null&&a<18?"You need to be 18 or older to apply.":"Enter your date of birth.";
-  const checks=[
-    mark("name",v("name").split(/\s+/).length>=2),
-    mark("email",/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v("email"))),
-    mark("phone",v("phone").replace(/\D/g,"").length>=7),
-    mark("social",v("social").length>=3),
-    mark("selfie",!!selfie),
-    mark("dob",a!=null&&a>=18&&a<100),
-    mark("country",!!v("country")),
-    mark("rel",!!document.querySelector('input[name=rel]:checked')),
-    mark("ok",document.getElementById("ok").checked)];
-  if(checks.includes(false)){document.querySelector(".invalid").scrollIntoView({behavior:"smooth",block:"center"});return}
-  const first=v("name").split(/\s+/)[0];
-  document.getElementById("doneH").innerHTML=`Thank you, ${first.replace(/[<>&"]/g,"")}. <em>You're in review.</em>`;
-  document.getElementById("doneP").textContent=`Our hosts are setting the table for ${cur.title} on ${cur.date}. We'll reach you at ${v("email")} and on WhatsApp with a yes or a not-this-time.`;
-  document.getElementById("appId").textContent="Application ST-"+cur.id.toUpperCase()+"-"+Math.floor(1000+Math.random()*9000);
-  show("done");
-});
-document.getElementById("form").addEventListener("input",e=>{const w=e.target.closest(".f-item");if(w)w.classList.remove("invalid")});
-document.getElementById("form").addEventListener("change",e=>{const w=e.target.closest(".f-item");if(w)w.classList.remove("invalid")});
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
