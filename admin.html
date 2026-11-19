@@ -205,6 +205,7 @@ label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script>
+const LINK_TYPE=((location.hash+location.search).match(/type=(invite|recovery)/)||[])[1]||null;
 const sb=window.supabase.createClient(ST_CONFIG.SUPABASE_URL,ST_CONFIG.SUPABASE_ANON_KEY);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -221,6 +222,7 @@ let DINNERS=[],APPS=[],SETTINGS={},filter="all",armed=null;
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
   if(!session){showLogin();return}
+  if(LINK_TYPE){showSetPassword();return}
   const {data}=await sb.from("admins").select("user_id").eq("user_id",session.user.id).maybeSingle();
   if(!data){await sb.auth.signOut();showLogin("This account isn't set up as a host.");return}
   $("v-login").hidden=true;$("v-app").hidden=false;
@@ -241,13 +243,21 @@ $("forgot").onclick=async()=>{
   await sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split("#")[0]});
   showLogin("If that email is a host account, a reset link is on its way.");
 };
-sb.auth.onAuthStateChange(async(ev)=>{
-  if(ev==="PASSWORD_RECOVERY"){
-    $("v-app").hidden=true;$("v-login").hidden=false;
-    $("loginForm").innerHTML=`<div class="field"><label for="newPass">New password</label><input id="newPass" type="password" minlength="8" autocomplete="new-password" required></div><button class="btn primary" type="submit" style="justify-content:center">Save new password</button>`;
-    $("loginForm").onsubmit=async e=>{e.preventDefault();const {error}=await sb.auth.updateUser({password:$("newPass").value});if(error){toast(error.message);return}toast("Password saved");location.hash="";location.reload()};
-  }
-});
+function showSetPassword(){
+  $("v-app").hidden=true;$("v-login").hidden=false;
+  const old=$("loginForm"),f=old.cloneNode(false);old.replaceWith(f);
+  f.innerHTML=`<p class="muted" style="margin:0">${LINK_TYPE==="invite"?"Welcome! Choose a password for your host account.":"Choose a new password."}</p>
+    <div class="field"><label for="newPass">New password</label><input id="newPass" type="password" minlength="8" autocomplete="new-password" required></div>
+    <p class="errmsg" id="pErr" hidden></p>
+    <button class="btn primary" type="submit" style="justify-content:center">Save password</button>`;
+  f.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const {error}=await sb.auth.updateUser({password:$("newPass").value});
+    if(error){$("pErr").textContent=error.message;$("pErr").hidden=false;return}
+    history.replaceState(null,"",location.pathname);location.reload();
+  });
+}
+sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"&&!LINK_TYPE)showSetPassword()});
 $("logout").onclick=async()=>{await sb.auth.signOut();location.reload()};
 
 /* ── tabs ── */
