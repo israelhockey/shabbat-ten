@@ -213,6 +213,9 @@ const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MON=["Jan","Feb","Mar","A
 const fdate=d=>{const x=new Date(d+"T12:00:00");return `${DAYS[x.getDay()]}, ${MON[x.getMonth()]} ${x.getDate()}, ${x.getFullYear()}`};
 const STOCK=["media/table.jpg","media/challah1.jpg","media/challah2.jpg","media/t.jpg","media/c.jpg"];
 const REL={single:"Single",relationship:"In a relationship",married:"Married"};
+const OBS={orthodox:"Orthodox",dati_leumi:"Dati Leumi",masorti:"Masorti",secular:"Secular",other:"Other"};
+const KOSHER={full:"Kosher in & out",home:"Kosher at home",none:"Not kosher"};
+const obsText=a=>a.observance?(a.observance==="other"?(a.observance_other||"Other"):OBS[a.observance]):"";
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
 function ageOf(v){const b=new Date(v),n=new Date();let a=n.getFullYear()-b.getFullYear();const m=n.getMonth()-b.getMonth();if(m<0||(m===0&&n.getDate()<b.getDate()))a--;return a}
 
@@ -330,7 +333,7 @@ function appCard(a){
       ${a._img?`<img class="selfie" src="${esc(a._img)}" alt="Selfie of ${esc(a.full_name)}" data-zoom>`:`<div class="selfie"></div>`}
       <div class="who">
         <div class="row" style="justify-content:space-between;gap:6px"><h3>${esc(a.full_name)}</h3><span class="status st-${a.status}">${a.status==="pending"?"to review":a.status}</span></div>
-        <div class="tags"><span class="tag ${a.seat}">${a.seat==="m"?"Male":"Female"}</span><span class="tag">${ageOf(a.dob)} yrs</span><span class="tag">${esc(REL[a.relationship]||a.relationship)}</span><span class="tag">${esc(a.country)}</span></div>
+        <div class="tags"><span class="tag ${a.seat}">${a.seat==="m"?"Male":"Female"}</span><span class="tag">${ageOf(a.dob)} yrs</span><span class="tag">${esc(REL[a.relationship]||a.relationship)}</span><span class="tag">${esc(a.country)}</span>${a.observance?`<span class="tag">${esc(obsText(a))}</span>`:""}${a.kashrut?`<span class="tag">${esc(KOSHER[a.kashrut]||a.kashrut)}</span>`:""}</div>
         <dl class="details" style="margin-top:8px">
           <dt>Phone</dt><dd>${esc(a.phone)}</dd>
           <dt>Email</dt><dd>${esc(a.email)}</dd>
@@ -387,9 +390,9 @@ $("apps").addEventListener("change",async e=>{
 $("lightbox").onclick=()=>$("lightbox").hidden=true;
 $("csv").onclick=()=>{
   const d=dinner();if(!d||!APPS.length){toast("Nothing to export");return}
-  const cols=["full_name","seat","status","paid","phone","email","social","dob","country","relationship","bio","created_at"];
+  const cols=["full_name","seat","status","paid","phone","email","social","dob","country","relationship","observance","kashrut","bio","created_at"];
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const csv=[cols.join(","),...APPS.map(a=>cols.map(c=>q(c==="seat"?(a.seat==="m"?"male":"female"):a[c])).join(","))].join("\n");
+  const csv=[cols.join(","),...APPS.map(a=>cols.map(c=>q(c==="seat"?(a.seat==="m"?"male":"female"):c==="observance"?obsText(a):c==="kashrut"?(KOSHER[a.kashrut]||""):a[c])).join(","))].join("\n");
   const blob=new Blob(["﻿"+csv],{type:"text/csv"});const u=URL.createObjectURL(blob);
   const l=document.createElement("a");l.href=u;l.download=`${d.dinner_date}-${d.title.replace(/\W+/g,"-")}.csv`;l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);
 };

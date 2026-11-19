@@ -149,3 +149,8 @@ select * from (values
   'A stone-walled courtyard a few steps from the port. Fish from the market that morning, a cook who tells the story behind every plate, and ten people who came alone and leave as a crew.',
   array['Challah and three spreads','Market crudo with lemon and chili','Whole roasted fish, herbs, potatoes','Knafeh to share','Galilee whites and a rosé'],220,'media/table.jpg')
 ) v where not exists (select 1 from public.dinners);
+
+-- ───────── Added: observance & kashrut ─────────
+alter table public.applications add column if not exists observance text check (observance in ('orthodox','dati_leumi','masorti','secular','other'));
+alter table public.applications add column if not exists observance_other text not null default '';
+alter table public.applications add column if not exists kashrut text check (kashrut in ('full','home','none'));

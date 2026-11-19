@@ -139,6 +139,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--lilac);outline:none}
 .seg input{position:absolute;opacity:0;pointer-events:none}
 .seg label:has(input:checked){border-color:var(--lilac);background:rgba(201,182,255,.12);font-weight:700}
 .seg label.f:has(input:checked){border-color:var(--coral);background:rgba(255,138,107,.12)}
+.seg-stack{flex-direction:column}
+.seg-stack label{flex:1 1 auto;text-align:left;padding:12px 14px}
+#obsOther{margin-top:8px}
 .seg label:has(input:disabled){opacity:.4;cursor:not-allowed}
 .seg label:has(input:focus-visible){outline:2px solid var(--lilac);outline-offset:2px}
 .selfie{display:flex;gap:16px;align-items:center;border:1px dashed var(--line);border-radius:18px;padding:16px;background:var(--deep)}
@@ -316,6 +319,24 @@ footer{margin-top:64px}
               <label><input type="radio" name="rel" value="relationship"><span>In a relationship</span></label>
               <label><input type="radio" name="rel" value="married"><span>Married</span></label>
             </div><span class="err">Let us know your relationship status.</span>
+          </div>
+          <div class="f-item" data-f="obs"><span class="lbl">Level of observance</span>
+            <div class="seg" id="obsSeg">
+              <label><input type="radio" name="obs" value="orthodox"><span>Orthodox</span></label>
+              <label><input type="radio" name="obs" value="dati_leumi"><span>Dati Leumi</span></label>
+              <label><input type="radio" name="obs" value="masorti"><span>Masorti (traditional)</span></label>
+              <label><input type="radio" name="obs" value="secular"><span>Secular</span></label>
+              <label><input type="radio" name="obs" value="other"><span>Other</span></label>
+            </div>
+            <input id="obsOther" type="text" placeholder="Describe how you observe" hidden>
+            <span class="err" id="obsErr">Choose your level of observance.</span>
+          </div>
+          <div class="f-item" data-f="kosher"><span class="lbl">Level of kashrut</span>
+            <div class="seg seg-stack">
+              <label><input type="radio" name="kosher" value="full"><span>Completely kosher <small class="opt">(inside and outside the home)</small></span></label>
+              <label><input type="radio" name="kosher" value="home"><span>Kosher in the home <small class="opt">(not outside the home)</small></span></label>
+              <label><input type="radio" name="kosher" value="none"><span>Not kosher</span></label>
+            </div><span class="err">Choose your level of kashrut.</span>
           </div>
           <div class="f-item"><label for="bio">Anything we should know? <span class="opt">(optional)</span></label><textarea id="bio" rows="3" placeholder="What you do, how long you've been in TLV, your go-to Shabbat dish…"></textarea></div>
           <div class="f-item" data-f="ok"><label class="check"><input id="ok" type="checkbox"><span>I understand seats are curated, I may not be approved, and my details are used only to review this application.</span></label><span class="err">Please confirm to continue.</span></div>

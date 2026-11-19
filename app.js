@@ -80,6 +80,8 @@ function shrink(file){return new Promise((res,rej)=>{const img=new Image();img.o
 function ageOf(v){if(!v)return null;const b=new Date(v),n=new Date();let a=n.getFullYear()-b.getFullYear();const m=n.getMonth()-b.getMonth();if(m<0||(m===0&&n.getDate()<b.getDate()))a--;return a}
 $("dob").addEventListener("input",e=>{const a=ageOf(e.target.value);$("age").textContent=a!=null&&a>0?`· ${a}`:""});
 
+$("obsSeg").addEventListener("change",e=>{const o=e.target.value==="other";$("obsOther").hidden=!o;if(o)$("obsOther").focus()});
+
 function mark(f,ok){document.querySelector(`[data-f="${f}"]`).classList.toggle("invalid",!ok);return ok}
 $("form").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -87,6 +89,8 @@ $("form").addEventListener("submit",async e=>{
   const a=ageOf(v("dob"));
   $("dobErr").textContent=a!=null&&a<18?"You need to be 18 or older to apply.":"Enter your date of birth.";
   const rel=document.querySelector('input[name=rel]:checked');
+  const obs=document.querySelector('input[name=obs]:checked'), kosher=document.querySelector('input[name=kosher]:checked');
+  $("obsErr").textContent=obs&&obs.value==="other"?"Tell us a little about how you observe.":"Choose your level of observance.";
   const checks=[
     mark("name",v("name").split(/\s+/).length>=2),
     mark("email",/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v("email"))),
@@ -96,6 +100,8 @@ $("form").addEventListener("submit",async e=>{
     mark("dob",a!=null&&a>=18&&a<100),
     mark("country",!!v("country")),
     mark("rel",!!rel),
+    mark("obs",!!obs&&(obs.value!=="other"||v("obsOther").length>=2)),
+    mark("kosher",!!kosher),
     mark("ok",$("ok").checked)];
   if(checks.includes(false)){document.querySelector(".invalid").scrollIntoView({behavior:"smooth",block:"center"});return}
 
@@ -108,13 +114,13 @@ $("form").addEventListener("submit",async e=>{
     if(up.error)throw up.error;
     const phone=v("cc")+" "+v("phone").replace(/[^\d ]/g,"").replace(/^0+/,"");
     const ins=await sb.from("applications").insert({id,dinner_id:cur.id,seat,full_name:v("name"),email:v("email"),phone,
-      social:v("social"),selfie_path:path,dob:v("dob"),country:v("country"),relationship:rel.value,bio:v("bio")});
+      social:v("social"),selfie_path:path,dob:v("dob"),country:v("country"),relationship:rel.value,observance:obs.value,observance_other:obs.value==="other"?v("obsOther"):"",kashrut:kosher.value,bio:v("bio")});
     if(ins.error)throw ins.error;
     const first=v("name").split(/\s+/)[0], f=fmt(cur.dinner_date);
     $("doneH").innerHTML=`Thank you, ${esc(first)}. <em>You're in review.</em>`;
     $("doneP").textContent=`Our hosts are setting the table for ${cur.title} on ${f.long}. We'll message you on WhatsApp with a yes, a waitlist spot, or a not-this-time.`;
     $("appId").textContent="Application ST-"+id.slice(0,6).toUpperCase();
-    $("form").reset();selfieBlob=null;$("age").textContent="";
+    $("form").reset();$("obsOther").hidden=true;selfieBlob=null;$("age").textContent="";
     $("ph").innerHTML=`<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--lilac)" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="9" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>`;
     show("done");
   }catch(ex){
