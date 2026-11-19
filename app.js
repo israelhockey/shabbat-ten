@@ -27,7 +27,7 @@ async function load(){
   $("list").innerHTML=`<p class="hint" style="grid-column:1/-1">Loading dinners…</p>`;
   const {data,error}=await sb.from("dinners_public").select("*").order("dinner_date");
   if(error){$("list").innerHTML=`<p class="hint" style="grid-column:1/-1">We couldn't load the dinners right now. Please refresh in a moment.</p>`;return}
-  DINNERS=data;renderList();
+  DINNERS=data.slice(0,1);renderList();
 }
 $("list").addEventListener("click",e=>{const c=e.target.closest(".card");if(c)openEvent(c.dataset.id)});
 

@@ -154,3 +154,7 @@ select * from (values
 alter table public.applications add column if not exists observance text check (observance in ('orthodox','dati_leumi','masorti','secular','other'));
 alter table public.applications add column if not exists observance_other text not null default '';
 alter table public.applications add column if not exists kashrut text check (kashrut in ('full','home','none'));
+
+-- ───────── Added: archive ─────────
+alter table public.dinners add column if not exists archived boolean not null default false;
+-- dinners_public and applications_guard were recreated to also exclude archived dinners (see repo history).

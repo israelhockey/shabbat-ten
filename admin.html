@@ -107,6 +107,10 @@ label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}
 .drow img{width:110px;height:72px;object-fit:cover;border-radius:12px;flex:none}
 .drow .info{flex:1 1 200px;min-width:0}
 .drow h3{margin:0;font-family:var(--serif);font-weight:400;font-size:24px}
+.dhead{font-size:28px;margin:18px 0 2px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 9px;background:var(--deep);color:var(--muted)}
+.badge.live{background:rgba(127,224,176,.15);color:var(--ok)}
+.btn.danger{color:var(--err)}
 .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .photo{border:2px solid transparent;border-radius:12px;padding:0;background:none;cursor:pointer;overflow:hidden;aspect-ratio:16/11}
 .photo img{width:100%;height:100%;object-fit:cover;display:block}
@@ -173,7 +177,7 @@ label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}
   <!-- DINNERS -->
   <section id="t-dinners" hidden>
     <div class="top" style="justify-content:space-between">
-      <h1 style="font-size:40px">Dinners</h1>
+      <div><h1 style="font-size:40px">Dinners</h1><p class="small muted" style="margin:4px 0 0">Only the next upcoming dinner shows on the website. Past dinners move to the archive automatically.</p></div>
       <button class="btn primary" id="newDinner" type="button">+ Add dinner</button>
     </div>
     <div id="editor" hidden></div>
@@ -276,14 +280,20 @@ async function loadDinners(){
   if(error){toast("Couldn't load dinners");return}
   DINNERS=data;renderDinnerSelect();renderDinnerList();
 }
+const todayStr=()=>{const n=new Date();return new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const isArchived=d=>d.archived||d.dinner_date<todayStr();
+const upcoming=()=>DINNERS.filter(d=>!isArchived(d)).sort((a,b)=>a.dinner_date.localeCompare(b.dinner_date));
+const archivedList=()=>DINNERS.filter(isArchived).sort((a,b)=>b.dinner_date.localeCompare(a.dinner_date));
+const liveId=()=>upcoming().find(d=>d.published)?.id;
 function renderDinnerSelect(){
   const sel=$("dinnerSel"),keep=sel.value;
-  sel.innerHTML=DINNERS.length?DINNERS.map(d=>`<option value="${d.id}">${esc(fdate(d.dinner_date))} · ${esc(d.title)}${d.published?"":" (hidden)"}</option>`).join(""):`<option value="">No dinners yet</option>`;
+  const opt=d=>`<option value="${d.id}">${esc(fdate(d.dinner_date))} · ${esc(d.title)}${d.published?"":" (hidden)"}</option>`;
+  const up=upcoming(),ar=archivedList();
+  sel.innerHTML=DINNERS.length?(up.length?`<optgroup label="Upcoming">${up.map(opt).join("")}</optgroup>`:"")+(ar.length?`<optgroup label="Archive">${ar.map(opt).join("")}</optgroup>`:""):`<option value="">No dinners yet</option>`;
   if(keep&&DINNERS.some(d=>d.id===keep))sel.value=keep;
 }
 function pickDefaultDinner(){
-  const today=new Date().toISOString().slice(0,10);
-  const up=[...DINNERS].filter(d=>d.dinner_date>=today).sort((a,b)=>a.dinner_date.localeCompare(b.dinner_date))[0];
+  const up=upcoming()[0];
   if(up)$("dinnerSel").value=up.id;
 }
 $("dinnerSel").onchange=()=>{filter="all";loadApps()};
@@ -398,17 +408,45 @@ $("csv").onclick=()=>{
 };
 
 /* ── dinners editor ── */
-function renderDinnerList(){
-  $("dlist").innerHTML=DINNERS.length?DINNERS.map(d=>`<div class="drow">
+let delRow=null;
+function drow(d){
+  const live=d.id===liveId(),past=d.dinner_date<todayStr(),arch=isArchived(d);
+  const badge=live?`<span class="badge live">Live on website</span>`:arch?`<span class="badge">${past&&!d.archived?"Past":"Archived"}</span>`:!d.published?`<span class="badge">Hidden</span>`:`<span class="badge">Next up</span>`;
+  return `<div class="drow">
     <img src="${esc(d.image_url)}" alt="">
-    <div class="info"><div class="eyebrow">${esc(fdate(d.dinner_date))}${d.published?"":" · hidden"}</div><h3>${esc(d.title)}</h3><div class="small muted">${esc(d.neighborhood)} · ₪${d.price} · ${d.seats_m}+${d.seats_f} seats</div></div>
-    <div class="row"><button class="btn sm" type="button" data-edit="${d.id}">Edit</button><button class="btn sm ghost" type="button" data-view="${d.id}">Applicants</button></div>
-  </div>`).join(""):`<div class="empty">No dinners yet. Tap “Add dinner” to post your first one.</div>`;
+    <div class="info"><div class="row" style="gap:8px"><span class="eyebrow">${esc(fdate(d.dinner_date))}</span>${badge}</div><h3>${esc(d.title)}</h3><div class="small muted">${esc(d.neighborhood)} · ₪${d.price} · ${d.seats_m}+${d.seats_f} seats</div></div>
+    <div class="row">
+      <button class="btn sm" type="button" data-edit="${d.id}">Edit</button>
+      <button class="btn sm ghost" type="button" data-view="${d.id}">Applicants</button>
+      ${past?"":`<button class="btn sm ghost" type="button" data-arch="${d.id}">${d.archived?"Restore":"Archive"}</button>`}
+      <button class="btn sm ghost danger" type="button" data-del="${d.id}">${delRow===d.id?"Delete + its applicants? Tap again":"Delete"}</button>
+    </div>
+  </div>`;
 }
-$("dlist").onclick=e=>{
-  const ed=e.target.closest("[data-edit]"),vw=e.target.closest("[data-view]");
+function renderDinnerList(){
+  if(!DINNERS.length){$("dlist").innerHTML=`<div class="empty">No dinners yet. Tap “Add dinner” to post your first one.</div>`;return}
+  const up=upcoming(),ar=archivedList();
+  $("dlist").innerHTML=`<h2 class="dhead">Upcoming</h2>`+(up.length?up.map(drow).join(""):`<div class="empty">No upcoming dinners. Tap “Add dinner” to post the next one.</div>`)+
+    (ar.length?`<h2 class="dhead">Archive <span class="small muted" style="font-family:var(--sans)">past and archived dinners</span></h2>`+ar.map(drow).join(""):"");
+}
+$("dlist").onclick=async e=>{
+  const ed=e.target.closest("[data-edit]"),vw=e.target.closest("[data-view]"),ac=e.target.closest("[data-arch]"),dl=e.target.closest("[data-del]");
   if(ed)openEditor(DINNERS.find(d=>d.id===ed.dataset.edit));
   if(vw){$("dinnerSel").value=vw.dataset.view;filter="all";loadApps();document.querySelector('[data-tab="apps"]').click()}
+  if(ac){
+    const d=DINNERS.find(x=>x.id===ac.dataset.arch);ac.disabled=true;
+    const {error}=await sb.from("dinners").update({archived:!d.archived}).eq("id",d.id);
+    if(error){toast("Couldn't save. Try again.");ac.disabled=false;return}
+    toast(d.archived?"Restored to upcoming":"Moved to archive");await loadDinners();
+  }
+  if(dl){
+    const id=dl.dataset.del;
+    if(delRow!==id){delRow=id;renderDinnerList();return}
+    delRow=null;dl.disabled=true;
+    const {error}=await sb.from("dinners").delete().eq("id",id);
+    if(error){toast("Couldn't delete");renderDinnerList();return}
+    toast("Dinner deleted");await loadDinners();pickDefaultDinner();loadApps();
+  }
 };
 $("newDinner").onclick=()=>openEditor(null);
 let edImg=STOCK[0],delArmed=false;
@@ -441,7 +479,7 @@ function openEditor(d){
       <div class="photos" id="photos"></div>
       <input id="d_upload" type="file" accept="image/*" hidden>
     </div>
-    <label class="switch"><input type="checkbox" id="d_pub" ${d.published?"checked":""}> Show on the website</label>
+    <label class="switch"><input type="checkbox" id="d_pub" ${d.published?"checked":""}> Show on the website when it's the next dinner</label>
     <p class="errmsg" id="dErr" hidden></p>
     <div class="row">
       <button class="btn primary" type="submit" id="dSave">${n?"Post dinner":"Save changes"}</button>
