@@ -90,6 +90,13 @@ drop trigger if exists applications_guard on public.applications;
 create trigger applications_guard before insert on public.applications
   for each row execute function public.applications_guard();
 
+-- ───────── API access (RLS below decides who sees what) ─────────
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.dinners, public.applications, public.settings to authenticated;
+grant select on public.admins to authenticated;
+grant insert on public.applications to anon;
+grant execute on function public.is_admin() to anon, authenticated;
+
 -- ───────── Row-level security ─────────
 alter table public.dinners enable row level security;
 alter table public.applications enable row level security;
